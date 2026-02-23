@@ -76,7 +76,7 @@ class UserManagerTest {
 
     @Test
     void clear() {
-        manager.add(User.create("u1", "U1", "u1@m.com"));
+        manager.add(User.create("u1u", "U1", "u1@m.com"));
         manager.clear();
         assertEquals(0, manager.count());
     }
