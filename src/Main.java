@@ -1,3 +1,5 @@
+import java.util.List;
+
 void main() {
     System.out.println("1.1 User");
     User u = User.create("john_doe", "John Doe", "john@example.com");
@@ -33,4 +35,40 @@ void main() {
     System.out.println("getTimeRemaining: " + ta.getTimeRemaining());
     ta.extend("2025-01-01");
     System.out.println("После extend(2025-01-01): isExpired=" + ta.isExpired() + ", " + ta.getTimeRemaining());
+
+    // Подзадача 2: Фильтры и сортировка 
+    demoFiltersAndSorters();
+}
+
+static void demoFiltersAndSorters() {
+    var perm = new Permission("read", "users", "Просмотр");
+    var users = List.of(
+            User.create("john_doe", "John Doe", "john@company.com"),
+            User.create("jane_admin", "Jane Admin", "jane@company.com"),
+            User.create("bob_user", "Bob User", "bob@gmail.com"));
+    var adminRole = new Role("Administrator", "");
+    adminRole.addPermission(perm);
+    var viewerRole = new Role("Viewer", "");
+    viewerRole.addPermission(perm);
+    var roles = List.of(adminRole, viewerRole);
+
+    System.out.println("\n2.1 UserFilter");
+    var f1 = UserFilters.byUsernameContains("john").or(UserFilters.byEmailDomain("gmail.com"));
+    users.stream().filter(f1::test).map(User::format).forEach(System.out::println);
+
+    System.out.println("\n2.2 RoleFilter");
+    var r1 = adminRole;
+    var rf = RoleFilters.byNameContains("Admin").and(RoleFilters.hasAtLeastNPermissions(1));
+    roles.stream().filter(rf::test).map(Role::getName).forEach(System.out::println);
+
+    System.out.println("\n2.3 AssignmentFilter");
+    var meta = AssignmentMetadata.now("admin", "test");
+    var assignments = List.<RoleAssignment>of(
+            new PermanentAssignment(users.get(0), r1, meta),
+            new TemporaryAssignment(users.get(1), r1, meta, "2025-06-01"));
+    assignments.stream().filter(AssignmentFilters.activeOnly()::test).map(RoleAssignment::assignmentId).forEach(System.out::println);
+
+    System.out.println("\n2.4 Sorters");
+    users.stream().sorted(UserSorters.byEmail()).map(User::username).forEach(System.out::println);
+    roles.stream().sorted(RoleSorters.byPermissionCount()).map(Role::getName).forEach(System.out::println);
 }
