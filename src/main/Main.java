@@ -1,4 +1,5 @@
 import java.util.List;
+import java.util.Scanner;
 
 class Main {
     public static void main(String[] args) {
@@ -38,6 +39,20 @@ class Main {
         System.out.println("После extend(2025-01-01): isExpired=" + ta.isExpired() + ", " + ta.getTimeRemaining());
 
         demoFiltersAndSorters();
+
+        System.out.println("\nПодзадача 4: Интерактивное меню\n");
+        RBACSystem system = new RBACSystem();
+        system.initialize();
+        CommandParser parser = new CommandParser();
+        CommandRegistry.registerAllCommands(parser);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Система управления доступом RBAC. Введите 'help' для списка команд.");
+        while (true) {
+            System.out.print("\n> ");
+            String input = scanner.nextLine();
+            if (input.isBlank()) continue;
+            parser.parseAndExecute(input, scanner, system);
+        }
     }
 
     static void demoFiltersAndSorters() {
