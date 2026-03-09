@@ -56,4 +56,5 @@ public abstract class AbstractRoleAssignment implements RoleAssignment {
                 + "Причина: " + reason + "\n"
                 + "Статус: " + (isActive() ? "ACTIVE" : "INACTIVE");
     }
+
 }

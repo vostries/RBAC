@@ -383,10 +383,10 @@ class CommandRegistry {
                 System.out.println("Назначений нет.");
                 return;
             }
-            String[] headers = {"Username", "Роль", "Тип", "Статус", "Назначено"};
+            String[] headers = {"ID", "Username", "Роль", "Тип", "Статус", "Назначено"};
             List<String[]> rows = all.stream()
                     .map(a -> new String[]{
-                            a.user().username(), a.role().getName(), a.assignmentType(),
+                            a.assignmentId(), a.user().username(), a.role().getName(), a.assignmentType(),
                             a.isActive() ? "ACTIVE" : "INACTIVE", a.metadata().assignedAt()
                     })
                     .toList();
@@ -409,6 +409,7 @@ class CommandRegistry {
                 System.out.println("Назначения для " + username + ":");
                 for (RoleAssignment a : assignments) {
                     if (a instanceof AbstractRoleAssignment ara) {
+                        System.out.println("ID: " + a.assignmentId());
                         System.out.println(ara.summary());
                     }
                     System.out.println();
@@ -460,11 +461,27 @@ class CommandRegistry {
         });
 
         parser.registerCommand("assignment-extend", "Продлить временное назначение", (scanner, system) -> {
-            System.out.print("Assignment ID: ");
-            String id = scanner.nextLine().trim();
-            System.out.print("Новая дата окончания (yyyy-MM-dd HH:mm): ");
-            String newDate = scanner.nextLine().trim();
-            system.getAssignmentManager().extendTemporaryAssignment(id, newDate);
+            String username = ConsoleUtils.promptString(scanner, "Username: ", true).trim();
+            var user = system.getUserManager().findByUsername(username);
+            if (user.isEmpty()) {
+                System.out.println("Пользователь не найден.");
+                return;
+            }
+            var temporaries = system.getAssignmentManager().findByUser(user.get()).stream()
+                    .filter(a -> "TEMPORARY".equals(a.assignmentType()))
+                    .toList();
+            if (temporaries.isEmpty()) {
+                System.out.println("У пользователя нет временных назначений.");
+                return;
+            }
+            System.out.println("Временные назначения:");
+            for (int i = 0; i < temporaries.size(); i++) {
+                var a = temporaries.get(i);
+                System.out.println((i + 1) + ". " + a.role().getName() + " (ID: " + a.assignmentId() + ")");
+            }
+            int idx = ConsoleUtils.promptInt(scanner, "Номер назначения для продления: ", 1, temporaries.size()) - 1;
+            String newDate = ConsoleUtils.promptString(scanner, "Новая дата окончания (yyyy-MM-dd или yyyy-MM-dd HH:mm): ", true).trim();
+            system.getAssignmentManager().extendTemporaryAssignment(temporaries.get(idx).assignmentId(), newDate);
             System.out.println("Назначение продлено до " + newDate);
         });
 
