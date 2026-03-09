@@ -3,14 +3,20 @@ import java.util.Locale;
 public record Permission(String name, String resource, String description) {
 
     public Permission(String name, String resource, String description) {
-        if (description == null || description.isBlank())
-            throw new IllegalArgumentException("Описание права не может быть пустым");
-        if (name == null)
-            name = "";
-        if (resource == null)
-            resource = "";
-        this.name = name.toUpperCase(Locale.ROOT).replace(" ", "");
-        this.resource = resource.toLowerCase(Locale.ROOT);
+        ValidationUtils.requireNonEmpty(description, "Описание");
+
+        String normalizedName = ValidationUtils.normalizeString(name);
+        String normalizedResource = ValidationUtils.normalizeString(resource);
+
+        if (normalizedName.isEmpty()) {
+            throw new IllegalArgumentException("Имя права не может быть пустым");
+        }
+        if (normalizedResource.isEmpty()) {
+            throw new IllegalArgumentException("Ресурс не может быть пустым");
+        }
+
+        this.name = normalizedName.toUpperCase(Locale.ROOT).replace(" ", "");
+        this.resource = normalizedResource.toLowerCase(Locale.ROOT);
         this.description = description;
     }
 
