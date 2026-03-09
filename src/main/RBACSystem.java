@@ -4,12 +4,14 @@ class RBACSystem {
     private final UserManager userManager;
     private final RoleManager roleManager;
     private final AssignmentManager assignmentManager;
+    private final AuditLog auditLog;
     private String currentUser;
 
     RBACSystem() {
         this.userManager = new UserManager();
         this.roleManager = new RoleManager();
         this.assignmentManager = new AssignmentManager(userManager, roleManager);
+        this.auditLog = new AuditLog();
         roleManager.setRemoveGuard(role -> !assignmentManager.findByRole(role).isEmpty());
     }
 
@@ -23,6 +25,10 @@ class RBACSystem {
 
     AssignmentManager getAssignmentManager() {
         return assignmentManager;
+    }
+
+    AuditLog getAuditLog() {
+        return auditLog;
     }
 
     void setCurrentUser(String username) {
@@ -72,6 +78,7 @@ class RBACSystem {
         assignmentManager.add(pa);
 
         setCurrentUser("admin");
+        auditLog.log("INIT", "system", "admin", "Инициализация системы и назначение роли Admin");
     }
 
     String generateStatistics() {

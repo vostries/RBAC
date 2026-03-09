@@ -38,6 +38,7 @@ class CommandRegistry {
             User user = User.create(username, fullName, email);
             system.getUserManager().add(user);
             System.out.println("Пользователь создан: " + user.format());
+            system.getAuditLog().log("USER_CREATE", system.getCurrentUser(), username, user.format());
         });
 
         parser.registerCommand("user-view", "Просмотр информации о пользователе", (scanner, system) -> {
@@ -101,6 +102,7 @@ class CommandRegistry {
             }
             system.getUserManager().remove(user.get());
             System.out.println("Пользователь удалён.");
+            system.getAuditLog().log("USER_DELETE", system.getCurrentUser(), username, "Удалён пользователь и его назначения");
         });
 
         parser.registerCommand("user-search", "Поиск пользователей по фильтрам", (scanner, system) -> {
@@ -174,6 +176,7 @@ class CommandRegistry {
             Role role = new Role(name, desc);
             system.getRoleManager().add(role);
             System.out.println("Роль создана: " + role.getName() + " [" + role.getId() + "]");
+            system.getAuditLog().log("ROLE_CREATE", system.getCurrentUser(), role.getName(), "Создана роль " + role.getName());
             System.out.print("Добавить права? (да/нет): ");
             if ("да".equalsIgnoreCase(scanner.nextLine().trim())) {
                 while (true) {
@@ -224,6 +227,7 @@ class CommandRegistry {
             }
             system.getRoleManager().remove(role.get());
             System.out.println("Роль удалена.");
+            system.getAuditLog().log("ROLE_DELETE", system.getCurrentUser(), name, "Роль удалена");
         });
 
         parser.registerCommand("role-add-permission", "Добавить право к роли", (scanner, system) -> {
@@ -344,12 +348,16 @@ class CommandRegistry {
                 PermanentAssignment pa = new PermanentAssignment(user.get(), role, meta);
                 system.getAssignmentManager().add(pa);
                 System.out.println("Роль назначена (постоянно).");
+                system.getAuditLog().log("ROLE_ASSIGN", system.getCurrentUser(), user.get().username(),
+                        "Роль " + role.getName() + " назначена как PERMANENT");
             } else if ("2".equals(type)) {
                 System.out.print("Дата окончания (yyyy-MM-dd HH:mm): ");
                 String expiresAt = scanner.nextLine().trim();
                 TemporaryAssignment ta = new TemporaryAssignment(user.get(), role, meta, expiresAt);
                 system.getAssignmentManager().add(ta);
                 System.out.println("Роль назначена (временно до " + expiresAt + ").");
+                system.getAuditLog().log("ROLE_ASSIGN", system.getCurrentUser(), user.get().username(),
+                        "Роль " + role.getName() + " назначена как TEMPORARY до " + expiresAt);
             } else {
                 System.out.println("Неверный тип.");
             }
@@ -380,8 +388,11 @@ class CommandRegistry {
                 System.out.println("Неверный номер.");
                 return;
             }
-            system.getAssignmentManager().revokeAssignment(assignments.get(idx).assignmentId());
+            RoleAssignment chosen = assignments.get(idx);
+            system.getAssignmentManager().revokeAssignment(chosen.assignmentId());
             System.out.println("Назначение отозвано.");
+            system.getAuditLog().log("ROLE_REVOKE", system.getCurrentUser(), chosen.user().username(),
+                    "Отозвана роль " + chosen.role().getName());
         });
 
         parser.registerCommand("assignment-list", "Список всех назначений", (scanner, system) -> {
@@ -583,6 +594,10 @@ class CommandRegistry {
 
         parser.registerCommand("stats", "Статистика системы", (scanner, system) -> {
             System.out.println(system.generateStatistics());
+        });
+
+        parser.registerCommand("audit-log", "Просмотр логов аудита", (scanner, system) -> {
+            system.getAuditLog().printLog();
         });
 
         parser.registerCommand("clear", "Очистить экран", (scanner, system) -> {
