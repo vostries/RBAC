@@ -600,6 +600,48 @@ class CommandRegistry {
             system.getAuditLog().printLog();
         });
 
+        parser.registerCommand("report-users", "Отчёт по пользователям", (scanner, system) -> {
+            ReportGenerator generator = new ReportGenerator();
+            String report = generator.generateUserReport(system.getUserManager(), system.getAssignmentManager());
+            System.out.println(report);
+            System.out.print("Сохранить в файл? (да/нет): ");
+            String answer = scanner.nextLine().trim();
+            if ("да".equalsIgnoreCase(answer)) {
+                System.out.print("Имя файла: ");
+                String filename = scanner.nextLine().trim();
+                generator.exportToFile(report, filename);
+                System.out.println("Отчёт сохранён в файл " + filename);
+            }
+        });
+
+        parser.registerCommand("report-roles", "Отчёт по ролям", (scanner, system) -> {
+            ReportGenerator generator = new ReportGenerator();
+            String report = generator.generateRoleReport(system.getRoleManager(), system.getAssignmentManager());
+            System.out.println(report);
+            System.out.print("Сохранить в файл? (да/нет): ");
+            String answer = scanner.nextLine().trim();
+            if ("да".equalsIgnoreCase(answer)) {
+                System.out.print("Имя файла: ");
+                String filename = scanner.nextLine().trim();
+                generator.exportToFile(report, filename);
+                System.out.println("Отчёт сохранён в файл " + filename);
+            }
+        });
+
+        parser.registerCommand("report-matrix", "Матрица прав", (scanner, system) -> {
+            ReportGenerator generator = new ReportGenerator();
+            String report = generator.generatePermissionMatrix(system.getUserManager(), system.getAssignmentManager());
+            System.out.println(report);
+            System.out.print("Сохранить в файл? (да/нет): ");
+            String answer = scanner.nextLine().trim();
+            if ("да".equalsIgnoreCase(answer)) {
+                System.out.print("Имя файла: ");
+                String filename = scanner.nextLine().trim();
+                generator.exportToFile(report, filename);
+                System.out.println("Отчёт сохранён в файл " + filename);
+            }
+        });
+
         parser.registerCommand("clear", "Очистить экран", (scanner, system) -> {
             for (int i = 0; i < 50; i++) System.out.println();
         });
