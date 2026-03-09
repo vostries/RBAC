@@ -109,7 +109,7 @@ class Main {
         UserManager um = new UserManager();
         RoleManager rm = new RoleManager();
         AssignmentManager am = new AssignmentManager(um, rm);
-        um.add(User.create("u1", "User One", "u1@x.com"));
+        um.add(User.create("user1", "User One", "u1@x.com"));
         ReportGenerator rg = new ReportGenerator();
         System.out.println(rg.generateUserReport(um, am).split("\n")[0]);
 
