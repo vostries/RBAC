@@ -98,7 +98,10 @@ final class FormatUtils {
         if (text == null) {
             return null;
         }
-        if (maxLength <= 0 || text.length() <= maxLength) {
+        if (maxLength <= 0) {
+            return text;
+        }
+        if (text.length() <= maxLength) {
             return text;
         }
         if (maxLength <= 3) {

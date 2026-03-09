@@ -28,7 +28,8 @@ class FormatUtilsTest {
 
     @Test
     void truncateAndPad() {
-        assertEquals("abc...", FormatUtils.truncate("abcdef", 6));
+        assertEquals("abcdef", FormatUtils.truncate("abcdef", 6));
+        assertEquals("abc...", FormatUtils.truncate("abcdefgh", 6));
         assertEquals("abc", FormatUtils.truncate("abc", 6));
         assertEquals("abc   ", FormatUtils.padRight("abc", 6));
         assertEquals("   abc", FormatUtils.padLeft("abc", 6));

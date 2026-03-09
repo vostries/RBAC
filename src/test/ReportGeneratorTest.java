@@ -20,6 +20,7 @@ class ReportGeneratorTest {
         User u = User.create("john", "John Doe", "john@mail.com");
         userManager.add(u);
         Role r = new Role("Admin", "Админ");
+        r.addPermission(new Permission("read", "users", "Просмотр"));
         roleManager.add(r);
         AssignmentMetadata meta = AssignmentMetadata.now("system", "test");
         assignmentManager.add(new PermanentAssignment(u, r, meta));

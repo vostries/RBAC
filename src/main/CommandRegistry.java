@@ -19,22 +19,18 @@ class CommandRegistry {
                 System.out.println("Пользователей нет.");
                 return;
             }
-            System.out.println("\n=== Список пользователей ===");
-            System.out.printf("%-20s %-30s %-30s\n", "Username", "Полное имя", "Email");
-            System.out.println("-".repeat(80));
-            for (User u : users) {
-                System.out.printf("%-20s %-30s %-30s\n", u.username(), u.fullName(), u.email());
-            }
-            System.out.println();
+            String[] headers = {"Username", "Полное имя", "Email"};
+            List<String[]> rows = users.stream()
+                    .map(u -> new String[]{u.username(), u.fullName(), u.email()})
+                    .toList();
+            System.out.println("\n" + FormatUtils.formatHeader("Список пользователей"));
+            System.out.println(FormatUtils.formatTable(headers, rows));
         });
 
         parser.registerCommand("user-create", "Создать нового пользователя", (scanner, system) -> {
-            System.out.print("Username: ");
-            String username = scanner.nextLine().trim();
-            System.out.print("Полное имя: ");
-            String fullName = scanner.nextLine().trim();
-            System.out.print("Email: ");
-            String email = scanner.nextLine().trim();
+            String username = ConsoleUtils.promptString(scanner, "Username: ", true).trim();
+            String fullName = ConsoleUtils.promptString(scanner, "Полное имя: ", true).trim();
+            String email = ConsoleUtils.promptString(scanner, "Email: ", true).trim();
             User user = User.create(username, fullName, email);
             system.getUserManager().add(user);
             System.out.println("Пользователь создан: " + user.format());
@@ -42,8 +38,7 @@ class CommandRegistry {
         });
 
         parser.registerCommand("user-view", "Просмотр информации о пользователе", (scanner, system) -> {
-            System.out.print("Username: ");
-            String username = scanner.nextLine().trim();
+            String username = ConsoleUtils.promptString(scanner, "Username: ", true).trim();
             var user = system.getUserManager().findByUsername(username);
             if (user.isEmpty()) {
                 System.out.println("Пользователь не найден.");
@@ -72,27 +67,21 @@ class CommandRegistry {
         });
 
         parser.registerCommand("user-update", "Обновить данные пользователя", (scanner, system) -> {
-            System.out.print("Username: ");
-            String username = scanner.nextLine().trim();
-            System.out.print("Новое полное имя: ");
-            String fullName = scanner.nextLine().trim();
-            System.out.print("Новый email: ");
-            String email = scanner.nextLine().trim();
+            String username = ConsoleUtils.promptString(scanner, "Username: ", true).trim();
+            String fullName = ConsoleUtils.promptString(scanner, "Новое полное имя: ", true).trim();
+            String email = ConsoleUtils.promptString(scanner, "Новый email: ", true).trim();
             system.getUserManager().update(username, fullName, email);
             System.out.println("Данные обновлены.");
         });
 
         parser.registerCommand("user-delete", "Удалить пользователя", (scanner, system) -> {
-            System.out.print("Username: ");
-            String username = scanner.nextLine().trim();
+            String username = ConsoleUtils.promptString(scanner, "Username: ", true).trim();
             var user = system.getUserManager().findByUsername(username);
             if (user.isEmpty()) {
                 System.out.println("Пользователь не найден.");
                 return;
             }
-            System.out.print("Подтвердите удаление (введите 'да'): ");
-            String confirm = scanner.nextLine().trim();
-            if (!"да".equalsIgnoreCase(confirm)) {
+            if (!ConsoleUtils.promptYesNo(scanner, "Подтвердите удаление (да/нет): ")) {
                 System.out.println("Отменено.");
                 return;
             }
@@ -159,26 +148,22 @@ class CommandRegistry {
                 System.out.println("Ролей нет.");
                 return;
             }
-            System.out.println("\n=== Список ролей ===");
-            System.out.printf("%-20s %-10s %-40s\n", "Название", "Прав", "ID");
-            System.out.println("-".repeat(70));
-            for (Role r : roles) {
-                System.out.printf("%-20s %-10d %-40s\n", r.getName(), r.getPermissions().size(), r.getId());
-            }
-            System.out.println();
+            String[] headers = {"Название", "Прав", "ID"};
+            List<String[]> rows = roles.stream()
+                    .map(r -> new String[]{r.getName(), String.valueOf(r.getPermissions().size()), r.getId()})
+                    .toList();
+            System.out.println("\n" + FormatUtils.formatHeader("Список ролей"));
+            System.out.println(FormatUtils.formatTable(headers, rows));
         });
 
         parser.registerCommand("role-create", "Создать новую роль", (scanner, system) -> {
-            System.out.print("Название роли: ");
-            String name = scanner.nextLine().trim();
-            System.out.print("Описание: ");
-            String desc = scanner.nextLine().trim();
+            String name = ConsoleUtils.promptString(scanner, "Название роли: ", true);
+            String desc = ConsoleUtils.promptString(scanner, "Описание: ", false);
             Role role = new Role(name, desc);
             system.getRoleManager().add(role);
             System.out.println("Роль создана: " + role.getName() + " [" + role.getId() + "]");
             system.getAuditLog().log("ROLE_CREATE", system.getCurrentUser(), role.getName(), "Создана роль " + role.getName());
-            System.out.print("Добавить права? (да/нет): ");
-            if ("да".equalsIgnoreCase(scanner.nextLine().trim())) {
+            if (ConsoleUtils.promptYesNo(scanner, "Добавить права? (да/нет): ")) {
                 while (true) {
                     System.out.print("Имя права (или пусто для завершения): ");
                     String pName = scanner.nextLine().trim();
@@ -195,8 +180,7 @@ class CommandRegistry {
         });
 
         parser.registerCommand("role-view", "Просмотр роли", (scanner, system) -> {
-            System.out.print("Имя роли: ");
-            String name = scanner.nextLine().trim();
+            String name = ConsoleUtils.promptString(scanner, "Имя роли: ", true);
             var role = system.getRoleManager().findByName(name);
             if (role.isEmpty()) {
                 System.out.println("Роль не найдена.");
@@ -206,8 +190,7 @@ class CommandRegistry {
         });
 
         parser.registerCommand("role-delete", "Удалить роль", (scanner, system) -> {
-            System.out.print("Имя роли: ");
-            String name = scanner.nextLine().trim();
+            String name = ConsoleUtils.promptString(scanner, "Имя роли: ", true);
             var role = system.getRoleManager().findByName(name);
             if (role.isEmpty()) {
                 System.out.println("Роль не найдена.");
@@ -220,8 +203,7 @@ class CommandRegistry {
                     System.out.println("  - " + a.user().username());
                 }
             }
-            System.out.print("Подтвердите удаление (введите 'да'): ");
-            if (!"да".equalsIgnoreCase(scanner.nextLine().trim())) {
+            if (!ConsoleUtils.promptYesNo(scanner, "Подтвердите удаление (да/нет): ")) {
                 System.out.println("Отменено.");
                 return;
             }
@@ -401,15 +383,15 @@ class CommandRegistry {
                 System.out.println("Назначений нет.");
                 return;
             }
-            System.out.println("\n=== Список назначений ===");
-            System.out.printf("%-20s %-20s %-12s %-10s %-30s\n", "Username", "Роль", "Тип", "Статус", "Назначено");
-            System.out.println("-".repeat(95));
-            for (RoleAssignment a : all) {
-                System.out.printf("%-20s %-20s %-12s %-10s %-30s\n",
-                        a.user().username(), a.role().getName(), a.assignmentType(),
-                        a.isActive() ? "ACTIVE" : "INACTIVE", a.metadata().assignedAt());
-            }
-            System.out.println();
+            String[] headers = {"Username", "Роль", "Тип", "Статус", "Назначено"};
+            List<String[]> rows = all.stream()
+                    .map(a -> new String[]{
+                            a.user().username(), a.role().getName(), a.assignmentType(),
+                            a.isActive() ? "ACTIVE" : "INACTIVE", a.metadata().assignedAt()
+                    })
+                    .toList();
+            System.out.println("\n" + FormatUtils.formatHeader("Список назначений"));
+            System.out.println(FormatUtils.formatTable(headers, rows));
         });
 
         parser.registerCommand("assignment-list-user", "Назначения конкретного пользователя", (scanner, system) -> {

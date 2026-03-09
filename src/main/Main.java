@@ -40,6 +40,8 @@ class Main {
 
         demoFiltersAndSorters();
 
+        demoSubtask5();
+
         System.out.println("\nПодзадача 4: Интерактивное меню\n");
         RBACSystem system = new RBACSystem();
         system.initialize();
@@ -85,5 +87,44 @@ class Main {
         System.out.println("\n2.4 Sorters");
         users.stream().sorted(UserSorters.byEmail()).map(User::username).forEach(System.out::println);
         roles.stream().sorted(RoleSorters.byPermissionCount()).map(Role::getName).forEach(System.out::println);
+    }
+
+    static void demoSubtask5() {
+        System.out.println("\n=== Подзадача 5: Дополнительные функции ===\n");
+
+        System.out.println("--- 5.1 ValidationUtils ---");
+        System.out.println("isValidUsername(\"john_1\"): " + ValidationUtils.isValidUsername("john_1"));
+        System.out.println("isValidUsername(\"ab\"): " + ValidationUtils.isValidUsername("ab"));
+        System.out.println("isValidEmail(\"a@b.co\"): " + ValidationUtils.isValidEmail("a@b.co"));
+        System.out.println("isValidDate(\"2026-03-02\"): " + ValidationUtils.isValidDate("2026-03-02"));
+        System.out.println("normalizeString(\"  a   b  \"): [" + ValidationUtils.normalizeString("  a   b  ") + "]");
+
+        System.out.println("\n--- 5.2 AuditLog ---");
+        AuditLog log = new AuditLog();
+        log.log("TEST_ACTION", "admin", "user1", "Демо записи");
+        System.out.println("Записей в логе: " + log.getAll().size());
+        log.printLog();
+
+        System.out.println("--- 5.3 ReportGenerator ---");
+        UserManager um = new UserManager();
+        RoleManager rm = new RoleManager();
+        AssignmentManager am = new AssignmentManager(um, rm);
+        um.add(User.create("u1", "User One", "u1@x.com"));
+        ReportGenerator rg = new ReportGenerator();
+        System.out.println(rg.generateUserReport(um, am).split("\n")[0]);
+
+        System.out.println("\n--- 5.5 FormatUtils ---");
+        String[] headers = {"A", "B"};
+        System.out.println(FormatUtils.formatTable(headers, List.of(new String[]{"x", "y"})));
+        System.out.println("truncate(\"длинная строка\", 10): " + FormatUtils.truncate("длинная строка", 10));
+        System.out.println("formatHeader(\"Заголовок\"):\n" + FormatUtils.formatHeader("Заголовок"));
+
+        System.out.println("--- 5.6 DateUtils ---");
+        System.out.println("getCurrentDate(): " + DateUtils.getCurrentDate());
+        System.out.println("isBefore(\"2024-01-01\", \"2024-01-02\"): " + DateUtils.isBefore("2024-01-01", "2024-01-02"));
+        System.out.println("addDays(\"2024-01-01\", 5): " + DateUtils.addDays("2024-01-01", 5));
+        System.out.println("formatRelativeTime(сегодня): " + DateUtils.formatRelativeTime(DateUtils.getCurrentDate()));
+
+        System.out.println("\n--- Подзадача 5 завершена ---\n");
     }
 }
