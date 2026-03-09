@@ -1,6 +1,6 @@
 import java.util.Comparator;
 
-final class UserSorters {
+public final class UserSorters {
 
     private UserSorters() {}
 

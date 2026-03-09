@@ -1,4 +1,4 @@
-final class UserFilters {
+public final class UserFilters {
 
     private UserFilters() {}
 

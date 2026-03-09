@@ -115,7 +115,8 @@ class Main {
 
         System.out.println("\n--- 5.5 FormatUtils ---");
         String[] headers = {"A", "B"};
-        System.out.println(FormatUtils.formatTable(headers, List.of(new String[]{"x", "y"})));
+        List<String[]> rows = List.of(new String[][]{{"x", "y"}});
+        System.out.println(FormatUtils.formatTable(headers, rows));
         System.out.println("truncate(\"длинная строка\", 10): " + FormatUtils.truncate("длинная строка", 10));
         System.out.println("formatHeader(\"Заголовок\"):\n" + FormatUtils.formatHeader("Заголовок"));
 

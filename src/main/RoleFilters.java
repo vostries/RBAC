@@ -1,4 +1,4 @@
-final class RoleFilters {
+public final class RoleFilters {
 
     private RoleFilters() {}
 

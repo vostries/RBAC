@@ -1,6 +1,6 @@
 import java.util.Comparator;
 
-final class RoleSorters {
+public final class RoleSorters {
 
     private RoleSorters() {}
 
