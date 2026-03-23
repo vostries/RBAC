@@ -49,6 +49,7 @@ public class Main {
         boolean isRendering = true;
         while (isRendering) {
             if (finishLatch.getCount() == 0) {
+                isRendering = false;
             }
             StringBuilder output = new StringBuilder();
 

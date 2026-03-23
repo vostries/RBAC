@@ -32,9 +32,5 @@ bin/
 # Maven
 target/
 
-# IntelliJ IDEA
-.idea/
-*.iml
-
 # Compiled classes
 *.class
