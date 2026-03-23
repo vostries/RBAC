@@ -1,0 +1,12 @@
+ValidationUtilsTest.class
+AssignmentManagerTest.class
+CommandParserTest.class
+CommandRegistryTest.class
+DateUtilsTest.class
+RoleManagerTest.class
+AuditLogTest.class
+FormatUtilsTest.class
+UserManagerTest.class
+RBACSystemTest.class
+ConsoleUtilsTest.class
+ReportGeneratorTest.class
