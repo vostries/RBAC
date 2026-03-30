@@ -3,12 +3,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 final class RoleManager implements Repository<Role> {
 
-    private final Map<String, Role> byId = new TreeMap<>();
-    private final Map<String, Role> byName = new TreeMap<>();
+    private final Map<String, Role> byId = new ConcurrentSkipListMap<>();
+    private final Map<String, Role> byName = new ConcurrentSkipListMap<>();
 
     private java.util.function.Predicate<Role> removeGuard;
 
@@ -17,7 +17,7 @@ final class RoleManager implements Repository<Role> {
     }
 
     @Override
-    public void add(Role item) {
+    public synchronized void add(Role item) {
         if (item == null) throw new IllegalArgumentException("Role не может быть null");
         if (byName.containsKey(item.getName()))
             throw new IllegalArgumentException("Роль с именем '" + item.getName() + "' уже существует");
@@ -26,7 +26,7 @@ final class RoleManager implements Repository<Role> {
     }
 
     @Override
-    public boolean remove(Role item) {
+    public synchronized boolean remove(Role item) {
         if (item == null) return false;
         if (removeGuard != null && removeGuard.test(item))
             throw new IllegalStateException("Роль '" + item.getName() + "' назначена пользователям");
@@ -51,7 +51,7 @@ final class RoleManager implements Repository<Role> {
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         byId.clear();
         byName.clear();
     }
@@ -65,6 +65,11 @@ final class RoleManager implements Repository<Role> {
         return byId.values().stream().filter(filter::test).toList();
     }
 
+    List<Role> findByFilterParallel(RoleFilter filter) {
+        if (filter == null) return findAll();
+        return byId.values().parallelStream().filter(filter::test).toList();
+    }
+
     List<Role> findAll(RoleFilter filter, Comparator<Role> sorter) {
         var list = filter != null ? findByFilter(filter) : findAll();
         return sorter != null ? list.stream().sorted(sorter).toList() : list;
@@ -74,12 +79,12 @@ final class RoleManager implements Repository<Role> {
         return name != null && byName.containsKey(name);
     }
 
-    void addPermissionToRole(String roleName, Permission permission) {
+    synchronized void addPermissionToRole(String roleName, Permission permission) {
         var role = findByName(roleName).orElseThrow(() -> new IllegalArgumentException("Роль '" + roleName + "' не найдена"));
         role.addPermission(permission);
     }
 
-    void removePermissionFromRole(String roleName, Permission permission) {
+    synchronized void removePermissionFromRole(String roleName, Permission permission) {
         var role = findByName(roleName).orElseThrow(() -> new IllegalArgumentException("Роль '" + roleName + "' не найдена"));
         role.removePermission(permission);
     }
