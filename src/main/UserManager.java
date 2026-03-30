@@ -3,14 +3,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 final class UserManager implements Repository<User> {
 
-    private final Map<String, User> storage = new TreeMap<>();
+    private final Map<String, User> storage = new ConcurrentSkipListMap<>();
 
     @Override
-    public void add(User item) {
+    public synchronized void add(User item) {
         if (item == null) throw new IllegalArgumentException("User не может быть null");
         User.create(item.username(), item.fullName(), item.email());
         if (storage.containsKey(item.username()))
@@ -19,7 +19,7 @@ final class UserManager implements Repository<User> {
     }
 
     @Override
-    public boolean remove(User item) {
+    public synchronized boolean remove(User item) {
         return item != null && storage.remove(item.username()) != null;
     }
 
@@ -39,7 +39,7 @@ final class UserManager implements Repository<User> {
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         storage.clear();
     }
 
@@ -57,6 +57,11 @@ final class UserManager implements Repository<User> {
         return storage.values().stream().filter(filter::test).toList();
     }
 
+    List<User> findByFilterParallel(UserFilter filter) {
+        if (filter == null) return findAll();
+        return storage.values().parallelStream().filter(filter::test).toList();
+    }
+
     List<User> findAll(UserFilter filter, Comparator<User> sorter) {
         var list = filter != null ? findByFilter(filter) : findAll();
         return sorter != null ? list.stream().sorted(sorter).toList() : list;
@@ -66,7 +71,7 @@ final class UserManager implements Repository<User> {
         return username != null && storage.containsKey(username);
     }
 
-    void update(String username, String newFullName, String newEmail) {
+    synchronized void update(String username, String newFullName, String newEmail) {
         var user = findById(username).orElseThrow(() -> new IllegalArgumentException("Пользователь '" + username + "' не найден"));
         User validated = User.create(username, newFullName, newEmail);
         var byEmail = findByEmail(newEmail);

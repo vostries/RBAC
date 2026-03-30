@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 final class AssignmentManager implements Repository<RoleAssignment> {
 
-    private final Map<String, RoleAssignment> storage = new TreeMap<>();
+    private final Map<String, RoleAssignment> storage = new ConcurrentSkipListMap<>();
     private final UserManager userManager;
     private final RoleManager roleManager;
 
@@ -19,7 +19,7 @@ final class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     @Override
-    public void add(RoleAssignment item) {
+    public synchronized void add(RoleAssignment item) {
         if (item == null) throw new IllegalArgumentException("RoleAssignment не может быть null");
         if (!userManager.exists(item.user().username()))
             throw new IllegalArgumentException("Пользователь '" + item.user().username() + "' не найден");
@@ -31,7 +31,7 @@ final class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     @Override
-    public boolean remove(RoleAssignment item) {
+    public synchronized boolean remove(RoleAssignment item) {
         return item != null && storage.remove(item.assignmentId()) != null;
     }
 
@@ -51,7 +51,7 @@ final class AssignmentManager implements Repository<RoleAssignment> {
     }
 
     @Override
-    public void clear() {
+    public synchronized void clear() {
         storage.clear();
     }
 
@@ -66,6 +66,11 @@ final class AssignmentManager implements Repository<RoleAssignment> {
     List<RoleAssignment> findByFilter(AssignmentFilter filter) {
         if (filter == null) return findAll();
         return storage.values().stream().filter(filter::test).toList();
+    }
+
+    List<RoleAssignment> findByFilterParallel(AssignmentFilter filter) {
+        if (filter == null) return findAll();
+        return storage.values().parallelStream().filter(filter::test).toList();
     }
 
     List<RoleAssignment> findAll(AssignmentFilter filter, Comparator<RoleAssignment> sorter) {
@@ -95,16 +100,26 @@ final class AssignmentManager implements Repository<RoleAssignment> {
         return perms;
     }
 
-    void revokeAssignment(String assignmentId) {
+    synchronized void revokeAssignment(String assignmentId) {
         var a = findById(assignmentId).orElseThrow(() -> new IllegalArgumentException("Назначение '" + assignmentId + "' не найдено"));
         if (a instanceof PermanentAssignment pa) pa.revoke();
         else if (a instanceof TemporaryAssignment ta) ta.extend("1970-01-01");
     }
 
-    void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
+    synchronized void extendTemporaryAssignment(String assignmentId, String newExpirationDate) {
         var a = findById(assignmentId).orElseThrow(() -> new IllegalArgumentException("Назначение '" + assignmentId + "' не найдено"));
         if (!(a instanceof TemporaryAssignment ta))
             throw new IllegalArgumentException("Назначение '" + assignmentId + "' не временное");
         ta.extend(newExpirationDate);
+    }
+
+    int deactivateExpiredTemporaryAssignments() {
+        int changed = 0;
+        for (RoleAssignment assignment : findAll()) {
+            if (assignment instanceof TemporaryAssignment temporary && temporary.deactivateIfExpired()) {
+                changed++;
+            }
+        }
+        return changed;
     }
 }
