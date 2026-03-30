@@ -41,10 +41,13 @@ class Main {
         demoFiltersAndSorters();
 
         demoSubtask5();
+        demoSubtask6();
 
         System.out.println("\nПодзадача 4: Интерактивное меню\n");
         RBACSystem system = new RBACSystem();
         system.initialize();
+        system.startExpiredAssignmentScheduler(5);
+        Runtime.getRuntime().addShutdownHook(new Thread(system::shutdown));
         CommandParser parser = new CommandParser();
         CommandRegistry.registerAllCommands(parser);
         Scanner scanner = new Scanner(System.in);
@@ -127,5 +130,39 @@ class Main {
         System.out.println("formatRelativeTime(сегодня): " + DateUtils.formatRelativeTime(DateUtils.getCurrentDate()));
 
         System.out.println("\n--- Подзадача 5 завершена ---\n");
+    }
+
+    static void demoSubtask6() {
+        System.out.println("\n=== Подзадача 6: Многопоточность ===\n");
+        RBACSystem system = new RBACSystem();
+        system.initialize();
+        system.startExpiredAssignmentScheduler(2);
+
+        User tempUser = User.create("thread_user", "Thread User", "thread@demo.local");
+        system.getUserManager().add(tempUser);
+        Role role = new Role("ThreadRole", "Роль для демонстрации многопоточности");
+        role.addPermission(new Permission("READ", "threads", "Чтение поточных данных"));
+        system.getRoleManager().add(role);
+        TemporaryAssignment assignment = new TemporaryAssignment(
+                tempUser,
+                role,
+                AssignmentMetadata.now("demo", "Временная роль для планировщика"),
+                "2000-01-01 00:00"
+        );
+        system.getAssignmentManager().add(assignment);
+
+        try {
+            String asyncReport = system.generateUserReportAsync().get();
+            System.out.println(asyncReport.split("\n")[0]);
+            system.saveSnapshotAsync("subtask6-demo.txt").get();
+            Thread.sleep(2200);
+            System.out.println("Активно временное назначение после планировщика: " + assignment.isActive());
+            System.out.println("Записей в audit-log: " + system.getAuditLog().getAll().size());
+        } catch (Exception e) {
+            System.out.println("Ошибка в демо подзадачи 6: " + e.getMessage());
+        } finally {
+            system.shutdown();
+        }
+        System.out.println("\n--- Подзадача 6 завершена ---\n");
     }
 }

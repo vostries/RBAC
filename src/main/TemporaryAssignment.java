@@ -5,6 +5,7 @@ import java.time.format.DateTimeParseException;
 public class TemporaryAssignment extends AbstractRoleAssignment {
     private String expiresAt;
     private boolean autoRenew = false;
+    private volatile boolean deactivatedByScheduler = false;
 
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -17,6 +18,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         if (newExpirationDate == null || newExpirationDate.isBlank())
             throw new IllegalArgumentException("Укажите дату окончания");
         this.expiresAt = newExpirationDate;
+        this.deactivatedByScheduler = false;
     }
 
     public String getExpiresAt() {
@@ -57,7 +59,15 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
 
     @Override
     public boolean isActive() {
-        return !isExpired();
+        return !deactivatedByScheduler && !isExpired();
+    }
+
+    public synchronized boolean deactivateIfExpired() {
+        if (!deactivatedByScheduler && isExpired()) {
+            deactivatedByScheduler = true;
+            return true;
+        }
+        return false;
     }
 
     @Override
