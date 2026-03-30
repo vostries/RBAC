@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 final class ReportGenerator {
 
@@ -35,6 +36,22 @@ final class ReportGenerator {
             }
             sb.append(System.lineSeparator());
         }
+        return sb.toString();
+    }
+
+    String generateUserReportParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        List<User> users = new ArrayList<>(userManager.findAll());
+        users.sort(Comparator.comparing(User::username));
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Отчёт по пользователям (parallel) ===\n");
+        if (users.isEmpty()) {
+            sb.append("Пользователей нет.\n");
+            return sb.toString();
+        }
+        String body = users.parallelStream()
+                .map(u -> buildUserReportBlock(u, assignmentManager))
+                .collect(Collectors.joining(System.lineSeparator()));
+        sb.append(body);
         return sb.toString();
     }
 
@@ -101,6 +118,68 @@ final class ReportGenerator {
             sb.append(System.lineSeparator());
         }
         return sb.toString();
+    }
+
+    String generatePermissionMatrixParallel(UserManager userManager, AssignmentManager assignmentManager) {
+        List<User> users = new ArrayList<>(userManager.findAll());
+        users.sort(Comparator.comparing(User::username));
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== Матрица прав (пользователь × ресурс, parallel) ===\n");
+        if (users.isEmpty()) {
+            sb.append("Пользователей нет.\n");
+            return sb.toString();
+        }
+        Set<String> resources = users.parallelStream()
+                .flatMap(u -> assignmentManager.getUserPermissions(u).stream().map(Permission::resource))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        List<String> resourceList = new ArrayList<>(resources);
+        resourceList.sort(String::compareTo);
+        if (resourceList.isEmpty()) {
+            sb.append("Прав нет.\n");
+            return sb.toString();
+        }
+        sb.append(String.format("%-20s", "Username"));
+        for (String res : resourceList) {
+            sb.append(String.format(" %-10s", res));
+        }
+        sb.append(System.lineSeparator());
+        int width = 20 + resourceList.size() * 11;
+        sb.append("-".repeat(width)).append(System.lineSeparator());
+        String rows = users.parallelStream()
+                .map(u -> buildPermissionRow(u, resourceList, assignmentManager))
+                .collect(Collectors.joining(System.lineSeparator()));
+        sb.append(rows).append(System.lineSeparator());
+        return sb.toString();
+    }
+
+    private String buildUserReportBlock(User user, AssignmentManager assignmentManager) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Пользователь: %s (%s) <%s>%n",
+                user.username(), user.fullName(), user.email()));
+        List<RoleAssignment> assignments = assignmentManager.findByUser(user);
+        if (assignments.isEmpty()) {
+            sb.append("  Ролей нет").append(System.lineSeparator());
+        } else {
+            sb.append("  Роли:").append(System.lineSeparator());
+            for (RoleAssignment a : assignments) {
+                sb.append(String.format("    - %s [%s, %s]%n",
+                        a.role().getName(),
+                        a.assignmentType(),
+                        a.isActive() ? "ACTIVE" : "INACTIVE"));
+            }
+        }
+        return sb.toString();
+    }
+
+    private String buildPermissionRow(User user, List<String> resourceList, AssignmentManager assignmentManager) {
+        StringBuilder row = new StringBuilder();
+        row.append(String.format("%-20s", user.username()));
+        Set<Permission> perms = assignmentManager.getUserPermissions(user);
+        for (String res : resourceList) {
+            boolean has = perms.stream().anyMatch(p -> p.resource().equals(res));
+            row.append(String.format(" %-10s", has ? "X" : ""));
+        }
+        return row.toString();
     }
 
     void exportToFile(String report, String filename) {
