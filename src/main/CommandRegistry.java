@@ -613,6 +613,17 @@ class CommandRegistry {
             }
         });
 
+        parser.registerCommand("report-users-async", "Отчёт по пользователям в фоне", (scanner, system) -> {
+            var future = system.generateUserReportAsync();
+            System.out.println("Фоновая генерация запущена...");
+            try {
+                String report = future.get();
+                System.out.println(report);
+            } catch (Exception e) {
+                System.out.println("Не удалось сгенерировать отчёт в фоне: " + e.getMessage());
+            }
+        });
+
         parser.registerCommand("report-roles", "Отчёт по ролям", (scanner, system) -> {
             ReportGenerator generator = new ReportGenerator();
             String report = generator.generateRoleReport(system.getRoleManager(), system.getAssignmentManager());
@@ -641,6 +652,19 @@ class CommandRegistry {
             }
         });
 
+        parser.registerCommand("save-async", "Сохранить снимок данных в фоне", (scanner, system) -> {
+            System.out.print("Имя файла для сохранения: ");
+            String filename = scanner.nextLine().trim();
+            var future = system.saveSnapshotAsync(filename);
+            System.out.println("Фоновое сохранение запущено...");
+            try {
+                future.get();
+                System.out.println("Сохранено: " + filename + " и " + filename + ".audit.log");
+            } catch (Exception e) {
+                System.out.println("Не удалось сохранить данные в фоне: " + e.getMessage());
+            }
+        });
+
         parser.registerCommand("clear", "Очистить экран", (scanner, system) -> {
             for (int i = 0; i < 50; i++) System.out.println();
         });
@@ -648,6 +672,7 @@ class CommandRegistry {
         parser.registerCommand("exit", "Выход из программы", (scanner, system) -> {
             System.out.print("Выйти? (да/нет): ");
             if ("да".equalsIgnoreCase(scanner.nextLine().trim())) {
+                system.shutdown();
                 System.out.println("До свидания!");
                 System.exit(0);
             }
